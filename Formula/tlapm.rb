@@ -1,9 +1,9 @@
 class Tlapm < Formula
   desc "TLA+ Proof Manager"
   homepage "https://github.com/tlaplus/tlapm"
-  url "https://github.com/tlaplus/tlapm/archive/9a52fafb00245ace0877ec8d91c4a09a7caa8061.tar.gz"
-  version "1.6.0-pre.20261118180108"
-  sha256 "84e6c920db01b827c0d81b95a6531ef9a0a69f963dc39d43fb8c6ba12ea8a5fc"
+  url "https://github.com/tlaplus/tlapm/archive/961e909fa3aca1fba412ee0908c5848b808e4b24.tar.gz"
+  version "1.6.0-pre.20261120174017"
+  sha256 "6a664c060bddcba87b85c9708d11a31ee4483c0646787fa80ac940d59830f3f9"
   license "BSD-2-Clause"
 
   livecheck do
@@ -11,10 +11,10 @@ class Tlapm < Formula
   end
 
   bottle do
-    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261118180108-44733923200-1"
-    rebuild 2
-    sha256 arm64_linux:  "7dc39d8aaa88ec827e7ec6293c199043e604ea172a4d5311608bc92e4785256f"
-    sha256 x86_64_linux: "407b743b5893c7fe71441f23edc9d23e318ff855f3b8864a5b889155364fa1cc"
+    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261120174017-44793485823-1"
+    rebuild 1
+    sha256 arm64_linux:  "164b93ce3b1631923c99c3cb0dd9bca84e1c523a21cc42a0edc4dc2c77eae47d"
+    sha256 x86_64_linux: "ef35a7f7d7f451f68df4e2ff6b3f10100a2f162ab8fe279af05447e3d4c4f372"
   end
 
   depends_on "gawk" => :build
