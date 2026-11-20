@@ -20,11 +20,12 @@ concurrency:
   group: tlapm-${{ github.ref }}
 
 jobs:
-  test:
+  source:
     runs-on: ubuntu-24.04
     outputs:
-      tag: ${{ steps.bottle.outputs.tag }}
-      version: ${{ steps.bottle.outputs.version }}
+      formula: ${{ steps.source.outputs.formula }}
+      tag: ${{ steps.source.outputs.tag }}
+      version: ${{ steps.source.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,69 +33,90 @@ jobs:
       - name: Select the source to bottle
         id: source
         run: |
+          set -euo pipefail
           if [[ "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             python3 scripts/update-formula.py
           fi
-          if [[ "$GITHUB_EVENT_NAME" != schedule ]] || ! git diff --quiet -- Formula/tlapm.rb ||
-             ! grep -q '^  bottle do$' Formula/tlapm.rb; then
-            echo 'build=true' >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_EVENT_NAME" == schedule ]] && git diff --quiet -- Formula/tlapm.rb &&
+             grep -q ' x86_64_linux:' Formula/tlapm.rb && grep -q ' arm64_linux:' Formula/tlapm.rb; then
+            exit 0
           fi
+          version=$(sed -n 's/^  version "\([^"]*\)"$/\1/p' Formula/tlapm.rb)
+          [[ -n "$version" ]]
+          tag="tlapm-$version-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          {
+            printf 'tag=%s\nversion=%s\nformula<<END_FORMULA\n' "$tag" "$version"
+            cat Formula/tlapm.rb
+            echo END_FORMULA
+          } >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: source
+    if: needs.source.outputs.tag != ''
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: x86_64_linux
+          - runner: ubuntu-24.04-arm
+            platform: arm64_linux
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install fonts for the Isabelle build
-        if: steps.source.outputs.build == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends fontconfig fonts-dejavu-core
-      - name: Build and test the x86-64 Linux bottle
-        id: bottle
-        if: steps.source.outputs.build == 'true'
+      - name: Build and test the Linux bottle
         env:
           HOMEBREW_NO_AUTO_UPDATE: '1'
+          PLATFORM: ${{ matrix.platform }}
+          RELEASE_TAG: ${{ needs.source.outputs.tag }}
+          TLAPM_FORMULA: ${{ needs.source.outputs.formula }}
         run: |
           set -euo pipefail
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          printf '%s\n' "$TLAPM_FORMULA" > Formula/tlapm.rb
           git switch -c test-tlapm-formula
           git -c user.name=CI -c user.email=ci@example.invalid commit --allow-empty -qam 'Test TLAPM source'
           repository=${GITHUB_REPOSITORY##*/}
           tap="${GITHUB_REPOSITORY%/*}/${repository#homebrew-}"
           brew tap "$tap" "$PWD"
           formula="$tap/tlapm"
+          brew trust --formula "$formula"
           brew install --build-bottle "$formula"
-          version=$(brew info --json=v2 "$formula" | jq -er '.formulae[0].versions.stable')
-          tag="tlapm-$version-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          root_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$tag"
+          root_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG"
           output="$RUNNER_TEMP/tlapm-bottle"
           mkdir -p "$output"
-          (
-            cd "$output"
-            brew bottle --json --root-url="$root_url" "$formula"
-            local_file=$(jq -er '.[].bottle.tags.x86_64_linux.local_filename' ./*.bottle.json)
-            release_file=$(jq -er '.[].bottle.tags.x86_64_linux.filename' ./*.bottle.json)
-            brew bottle --merge --write --no-commit ./*.bottle.json
-            brew uninstall "$formula"
-            brew trust --formula "$formula"
-            brew install "./$local_file"
-            brew test "$formula"
-            brew linkage --test "$formula"
-            if [[ "$local_file" != "$release_file" ]]; then
-              mv -- "$local_file" "$release_file"
-            fi
-          )
-          cp "$(brew --repository "$tap")/Formula/tlapm.rb" Formula/tlapm.rb
-          git diff "$GITHUB_SHA" -- Formula/tlapm.rb > "$output/formula.patch"
-          printf 'tag=%s\nversion=%s\n' "$tag" "$version" >> "$GITHUB_OUTPUT"
+          cd "$output"
+          brew bottle --json --root-url="$root_url" "$formula"
+          local_file=$(jq -er --arg platform "$PLATFORM" '.[].bottle.tags[$platform].local_filename' ./*.bottle.json)
+          release_file=$(jq -er --arg platform "$PLATFORM" '.[].bottle.tags[$platform].filename' ./*.bottle.json)
+          brew bottle --merge --write --no-commit ./*.bottle.json
+          brew uninstall "$formula"
+          brew trust --formula "$formula"
+          brew install "./$local_file"
+          brew test "$formula"
+          brew linkage --test "$formula"
+          if [[ "$local_file" != "$release_file" ]]; then
+            mv -- "$local_file" "$release_file"
+          fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: steps.bottle.outputs.tag != '' && github.ref_name == github.event.repository.default_branch
+        if: github.ref_name == github.event.repository.default_branch
         with:
-          name: tlapm-bottle
+          name: tlapm-bottle-${{ matrix.platform }}
           path: |
             ${{ runner.temp }}/tlapm-bottle/*.bottle*.tar.gz
-            ${{ runner.temp }}/tlapm-bottle/formula.patch
+            ${{ runner.temp }}/tlapm-bottle/*.bottle.json
           if-no-files-found: error
           compression-level: 0
+          overwrite: true
 
   publish:
-    needs: test
-    if: needs.test.outputs.tag != '' && github.ref_name == github.event.repository.default_branch
+    needs: [source, test]
+    if: needs.source.outputs.tag != '' && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -102,34 +124,66 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: tlapm-bottle
+          pattern: tlapm-bottle-*
           path: ${{ runner.temp }}/tlapm-bottle
-      - name: Publish the bottle before updating the tap
+      - name: Publish both bottles before updating the tap
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.test.outputs.tag }}
-          TLAPM_VERSION: ${{ needs.test.outputs.version }}
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+          RELEASE_TAG: ${{ needs.source.outputs.tag }}
+          TLAPM_FORMULA: ${{ needs.source.outputs.formula }}
+          TLAPM_VERSION: ${{ needs.source.outputs.version }}
         run: |
           set -euo pipefail
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           output="$RUNNER_TEMP/tlapm-bottle"
-          bottles=("$output"/*.bottle*.tar.gz)
-          [[ ${#bottles[@]} -eq 1 && -f "${bottles[0]}" ]]
-          bottle=${bottles[0]}
+          root_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG"
+          platforms=(x86_64_linux arm64_linux)
+          metadata=()
+          bottles=()
+          digests=()
+          for platform in "${platforms[@]}"; do
+            file=("$output/tlapm-bottle-$platform"/*.bottle.json)
+            [[ ${#file[@]} -eq 1 && -f "${file[0]}" ]]
+            info=${file[0]}
+            jq -e --arg root "$root_url" --arg version "$TLAPM_VERSION" --arg platform "$platform" \
+              '.[] | .formula.pkg_version == $version and .bottle.root_url == $root and
+                (.bottle.tags | keys == [$platform])' "$info"
+            name=$(jq -er --arg platform "$platform" '.[].bottle.tags[$platform].filename' "$info")
+            digest=$(jq -er --arg platform "$platform" '.[].bottle.tags[$platform].sha256' "$info")
+            bottle="${info%/*}/$name"
+            [[ "$(sha256sum "$bottle" | cut -d ' ' -f 1)" == "$digest" ]]
+            metadata+=("$info")
+            bottles+=("$bottle")
+            digests+=("$digest")
+          done
+          jq -es 'map(.[].bottle.rebuild) | unique | length == 1' "${metadata[@]}"
 
-          git apply --include=Formula/tlapm.rb "$output/formula.patch"
-          digest=$(sha256sum "$bottle" | cut -d ' ' -f 1)
-          grep -F "$digest" Formula/tlapm.rb
+          repository=${GITHUB_REPOSITORY##*/}
+          tap="${GITHUB_REPOSITORY%/*}/${repository#homebrew-}"
+          brew tap "$tap" "$PWD"
+          brew trust --formula "$tap/tlapm"
+          tap_formula="$(brew --repository "$tap")/Formula/tlapm.rb"
+          printf '%s\n' "$TLAPM_FORMULA" > "$tap_formula"
+          brew bottle --merge --write --no-commit "${metadata[@]}"
+          cp "$tap_formula" Formula/tlapm.rb
+          for i in "${!platforms[@]}"; do
+            grep -E "${platforms[i]}:[[:space:]]+\"${digests[i]}\"" Formula/tlapm.rb
+          done
 
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" "$bottle" --target "$GITHUB_SHA" \
-              --prerelease --title "TLAPM $TLAPM_VERSION" --notes 'x86-64 Linux bottle built on Ubuntu 24.04.'
+            gh release create "$RELEASE_TAG" "${bottles[@]}" --target "$GITHUB_SHA" \
+              --prerelease --title "TLAPM $TLAPM_VERSION" --notes 'x86-64 and ARM64 Linux bottles built on Ubuntu 24.04.'
           fi
-          published_digest=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" |
-            jq -er --arg name "${bottle##*/}" '.assets[] | select(.name == $name).digest')
-          if [[ "$published_digest" != "sha256:$digest" ]]; then
-            echo "Published bottle checksum does not match the tested bottle" >&2
-            exit 1
-          fi
+          release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+          for i in "${!bottles[@]}"; do
+            name=${bottles[i]##*/}
+            published_digest=$(jq -er --arg name "$name" '.assets[] | select(.name == $name).digest' <<< "$release")
+            if [[ "$published_digest" != "sha256:${digests[i]}" ]]; then
+              echo "Published checksum does not match the tested bottle: $name" >&2
+              exit 1
+            fi
+          done
 
           git -c user.name='github-actions[bot]' \
             -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
