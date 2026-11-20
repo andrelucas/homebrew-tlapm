@@ -50,5 +50,8 @@ if (url, version) != (old_url, old_version):
         digest = hashlib.sha256(archive.read()).hexdigest()
     old_pins = f'  url "{old_url}"\n  version "{old_version}"\n  sha256 "{old_digest}"'
     new_pins = f'  url "{url}"\n  version "{version}"\n  sha256 "{digest}"'
-    formula.write_text(original.replace(old_pins, new_pins, 1))
+    updated = original.replace(old_pins, new_pins, 1)
+    # Bottle checksums apply to the previously packaged source version.
+    updated = re.sub(r"\n  bottle do\n(?:    [^\n]*\n)*  end\n", "", updated)
+    formula.write_text(updated)
 print(f"TLAPM {version} ({sha[:7]})")

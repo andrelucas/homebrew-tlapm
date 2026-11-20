@@ -10,7 +10,9 @@ tlapm --version
 tlapm --config
 ```
 
-The installation compiles TLAPM and downloads its OCaml dependencies and prover inputs, including the roughly 1 GB Isabelle distribution. The source build was tested on Rocky Linux 9 with system glibc 2.34 and Homebrew's glibc 2.39 runtime.
+Homebrew installs a prebuilt bottle when one is available for your system. The bottles are built on Ubuntu 24.04 and also run on Rocky Linux 9 with system glibc 2.34 and Homebrew's glibc 2.39 runtime.
+
+Building from source requires fontconfig and an installed font for Isabelle. It downloads OCaml dependencies and prover inputs, including the roughly 1 GB Isabelle distribution.
 
 For editors that need a TLA⁺ library path, use `$(brew --prefix tlapm)/libexec/lib/tlapm/stdlib`.
 
