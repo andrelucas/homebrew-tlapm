@@ -10,6 +10,12 @@ class Tlapm < Formula
     skip "The tap tracks the commit tagged by the upstream rolling pre-release"
   end
 
+  bottle do
+    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261118180108-44721268937-1"
+    rebuild 1
+    sha256 x86_64_linux: "dd400fcf75e180891a5aaef00cc28338b01eefa55d87f169e45761c71d0b57dd"
+  end
+
   depends_on "gawk" => :build
   depends_on "ocaml" => :build
   depends_on "opam" => :build
