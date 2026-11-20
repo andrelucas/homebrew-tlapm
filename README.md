@@ -4,10 +4,8 @@ Build the TLA⁺ Proof Manager from the latest upstream rolling pre-release comm
 
 ## Install
 
-Replace `OWNER` with the GitHub account hosting `homebrew-tlapm`.
-
 ```sh
-brew install OWNER/tlapm/tlapm
+brew install andrelucas/tlapm/tlapm
 tlapm --version
 tlapm --config
 ```
@@ -27,6 +25,6 @@ Each formula version includes the rolling commit's UTC timestamp. The tap checks
 
 ## Maintain the tap
 
-Host this repository as `homebrew-tlapm` on GitHub and enable Actions. The **TLAPM tap** workflow can also be run manually from the default branch. Its publish job uses GitHub's built-in token to push the tested formula update to that branch.
+Host this repository as `andrelucas/homebrew-tlapm` on GitHub and enable Actions. The **TLAPM tap** workflow can also be run manually from the default branch. Its publish job uses GitHub's built-in token to push the tested formula update to that branch.
 
 From a local clone, run `python3 scripts/update-formula.py` to refresh the formula, then commit the result. On a supported Linux host, test the committed formula with `brew tap local/tlapm "$PWD"`, `brew install local/tlapm/tlapm`, and `brew test local/tlapm/tlapm`.
