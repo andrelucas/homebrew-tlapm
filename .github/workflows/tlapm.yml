@@ -1,0 +1,69 @@
+name: TLAPM tap
+
+on:
+  push:
+    paths: [Formula/tlapm.rb, scripts/update-formula.py, .github/workflows/tlapm.yml]
+  pull_request:
+    paths: [Formula/tlapm.rb, scripts/update-formula.py, .github/workflows/tlapm.yml]
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tlapm-${{ github.ref }}
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    outputs:
+      patch: ${{ steps.refresh.outputs.patch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check for a new rolling build
+        id: refresh
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          python3 scripts/update-formula.py
+          if ! git diff --quiet -- Formula/tlapm.rb; then
+            {
+              echo 'patch<<END_PATCH'
+              git diff -- Formula/tlapm.rb
+              echo 'END_PATCH'
+            } >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install from a local tap and check a proof
+        if: github.event_name != 'schedule' || steps.refresh.outputs.patch != ''
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          git switch -c test-tlapm-formula
+          git -c user.name=CI -c user.email=ci@example.invalid commit --allow-empty -qm 'Test TLAPM formula' -a
+          brew tap local/tlapm "$PWD"
+          brew install --build-from-source local/tlapm/tlapm
+          tlapm --version
+          brew test local/tlapm/tlapm
+          brew linkage --test local/tlapm/tlapm
+
+  publish:
+    needs: test
+    if: needs.test.outputs.patch != '' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Publish tested formula update
+        env:
+          FORMULA_PATCH: ${{ needs.test.outputs.patch }}
+        run: |
+          printf '%s\n' "$FORMULA_PATCH" | git apply --include=Formula/tlapm.rb
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m 'Update TLAPM rolling build' -- Formula/tlapm.rb
+          git push origin "HEAD:$GITHUB_REF"
