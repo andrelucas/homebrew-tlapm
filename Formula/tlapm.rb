@@ -14,10 +14,10 @@ class Tlapm < Formula
   end
 
   bottle do
-    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261120174017-44793485823-1"
-    rebuild 1
-    sha256 arm64_linux:  "164b93ce3b1631923c99c3cb0dd9bca84e1c523a21cc42a0edc4dc2c77eae47d"
-    sha256 x86_64_linux: "ef35a7f7d7f451f68df4e2ff6b3f10100a2f162ab8fe279af05447e3d4c4f372"
+    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261120174017-45171268982-1"
+    rebuild 2
+    sha256 arm64_linux:  "eac200665fbeb651005e43089f8c631d002cca0e619a4e647e6ea47b78b497e2"
+    sha256 x86_64_linux: "52d6a3c6edd384f9e3a337ad7810834eb5fbf05d346283519f62e8ba054d5c32"
   end
 
   depends_on "gawk" => :build

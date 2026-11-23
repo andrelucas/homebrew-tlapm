@@ -1,0 +1,76 @@
+{
+  "bottle": {
+    "stable": {
+      "files": {
+        "arm64_linux": {
+          "cellar": "/home/linuxbrew/.linuxbrew/Cellar",
+          "sha256": "eac200665fbeb651005e43089f8c631d002cca0e619a4e647e6ea47b78b497e2",
+          "url": "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261120174017-45171268982-1/tlapm-1.6.0-pre.20261120174017.arm64_linux.bottle.2.tar.gz"
+        },
+        "x86_64_linux": {
+          "cellar": "/home/linuxbrew/.linuxbrew/Cellar",
+          "sha256": "52d6a3c6edd384f9e3a337ad7810834eb5fbf05d346283519f62e8ba054d5c32",
+          "url": "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261120174017-45171268982-1/tlapm-1.6.0-pre.20261120174017.x86_64_linux.bottle.2.tar.gz"
+        }
+      },
+      "rebuild": 2
+    }
+  },
+  "dependencies": [
+    "gmp",
+    "zlib"
+  ],
+  "name": "tlapm",
+  "post_install_steps": [
+    {
+      "args": [
+        "-dkf",
+        "{{libexec}}/lib/tlapm/backends/Isabelle-install/poly/poly.gz"
+      ],
+      "command": {
+        "path": "/usr/bin/gzip"
+      },
+      "guards": [
+        {
+          "base": "libexec",
+          "condition": "if_exists",
+          "id": "1",
+          "path": "lib/tlapm/backends/Isabelle-install/poly/poly.gz"
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "args": [
+        "-dkf",
+        "{{libexec}}/lib/tlapm/backends/Isabelle-install/poly/polyimport.gz"
+      ],
+      "command": {
+        "path": "/usr/bin/gzip"
+      },
+      "guards": [
+        {
+          "base": "libexec",
+          "condition": "if_exists",
+          "id": "2",
+          "path": "lib/tlapm/backends/Isabelle-install/poly/polyimport.gz"
+        }
+      ],
+      "type": "run"
+    }
+  ],
+  "tap": "andrelucas/tlapm",
+  "variations": {
+    "x86_64_linux": {
+      "dependencies": [
+        "gcc",
+        "glibc",
+        "gmp",
+        "zlib"
+      ]
+    }
+  },
+  "versions": {
+    "stable": "1.6.0-pre.20261120174017"
+  }
+}
