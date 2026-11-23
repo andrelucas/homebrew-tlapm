@@ -1,4 +1,7 @@
 class Tlapm < Formula
+  POLYML_DIR = "lib/tlapm/backends/Isabelle-install/poly".freeze
+  POLYML_EXECUTABLES = %w[poly polyimport].freeze
+
   desc "TLA+ Proof Manager"
   homepage "https://github.com/tlaplus/tlapm"
   url "https://github.com/tlaplus/tlapm/archive/961e909fa3aca1fba412ee0908c5848b808e4b24.tar.gz"
@@ -27,6 +30,10 @@ class Tlapm < Formula
   depends_on :linux
   depends_on "gmp"
   depends_on "zlib"
+
+  on_intel do
+    depends_on "patchelf" => :build
+  end
 
   on_arm do
     depends_on "cmake" => :build
@@ -100,6 +107,27 @@ class Tlapm < Formula
     system "opam", "exec", "--", "dune", "build", "@install", "-j", ENV.make_jobs.to_s
     system "opam", "exec", "--", "dune", "install", "--relocatable", "--prefix", libexec
     bin.install_symlink libexec/"bin/tlapm"
+
+    if Hardware::CPU.intel?
+      # Preserve Poly/ML through bottle relocation and unpack it after the pour.
+      rpath = ["$ORIGIN", HOMEBREW_PREFIX/"opt/gcc/lib/gcc/current",
+               HOMEBREW_PREFIX/"opt/glibc/lib", HOMEBREW_PREFIX/"lib"].join(":")
+      POLYML_EXECUTABLES.each do |name|
+        executable = libexec/POLYML_DIR/name
+        system "patchelf", "--set-interpreter", HOMEBREW_PREFIX/"lib/ld.so",
+               "--force-rpath", "--set-rpath", rpath, executable
+        system "/usr/bin/gzip", "-n", executable
+      end
+    end
+  end
+
+  post_install_steps do
+    POLYML_EXECUTABLES.each do |name|
+      archive = "#{POLYML_DIR}/#{name}.gz"
+      if_path_exists archive, base: :libexec do
+        run "/usr/bin/gzip", args: ["-dkf", "{{libexec}}/#{archive}"]
+      end
+    end
   end
 
   test do

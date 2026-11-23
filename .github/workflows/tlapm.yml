@@ -2,9 +2,9 @@ name: TLAPM tap
 
 on:
   push:
-    paths: [Formula/tlapm.rb, scripts/update-formula.py, .github/workflows/tlapm.yml]
+    paths: [Formula/tlapm.rb, scripts/update-formula.py, scripts/bottle-api.jq, .github/workflows/tlapm.yml]
   pull_request:
-    paths: [Formula/tlapm.rb, scripts/update-formula.py, .github/workflows/tlapm.yml]
+    paths: [Formula/tlapm.rb, scripts/update-formula.py, scripts/bottle-api.jq, .github/workflows/tlapm.yml]
   schedule:
     - cron: '23 * * * *'
   workflow_dispatch:
@@ -38,7 +38,8 @@ jobs:
             python3 scripts/update-formula.py
           fi
           if [[ "$GITHUB_EVENT_NAME" == schedule ]] && git diff --quiet -- Formula/tlapm.rb &&
-             grep -q ' x86_64_linux:' Formula/tlapm.rb && grep -q ' arm64_linux:' Formula/tlapm.rb; then
+             grep -q ' x86_64_linux:' Formula/tlapm.rb && grep -q ' arm64_linux:' Formula/tlapm.rb &&
+             [[ -s api/formula/tlapm.json ]]; then
             exit 0
           fi
           version=$(sed -n 's/^  version "\([^"]*\)"$/\1/p' Formula/tlapm.rb)
@@ -185,7 +186,12 @@ jobs:
             fi
           done
 
+          mkdir -p api/formula
+          brew info --json=v2 "$tap/tlapm" > "$output/formula-info.json"
+          jq -Ses --arg tap "$tap" --slurpfile formula_info "$output/formula-info.json" \
+            -f scripts/bottle-api.jq "${metadata[@]}" > api/formula/tlapm.json
+          git add api/formula/tlapm.json
           git -c user.name='github-actions[bot]' \
             -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-            commit -m "Bottle TLAPM $TLAPM_VERSION" -- Formula/tlapm.rb
+            commit -m "Bottle TLAPM $TLAPM_VERSION" -- Formula/tlapm.rb api/formula/tlapm.json
           git push origin "HEAD:$GITHUB_REF"
