@@ -1,23 +1,23 @@
 class Tlapm < Formula
   POLYML_DIR = "lib/tlapm/backends/Isabelle-install/poly".freeze
+
+  bottle do
+    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261124174929-45460109373-1"
+    rebuild 1
+    sha256 arm64_linux:  "e4a4e0c86ed2e852ccda34b75587e2b7a8d999d638fa3a75f1dee44057a3a938"
+    sha256 x86_64_linux: "37b38db7da0476383a58a00be558b526492c9784177da2a1f3b06ead008ee468"
+  end
   POLYML_EXECUTABLES = %w[poly polyimport].freeze
 
   desc "TLA+ Proof Manager"
   homepage "https://github.com/tlaplus/tlapm"
-  url "https://github.com/tlaplus/tlapm/archive/961e909fa3aca1fba412ee0908c5848b808e4b24.tar.gz"
-  version "1.6.0-pre.20261120174017"
-  sha256 "6a664c060bddcba87b85c9708d11a31ee4483c0646787fa80ac940d59830f3f9"
+  url "https://github.com/tlaplus/tlapm/archive/61263342bc88697b44e6ef6f7b876b3e46f7f787.tar.gz"
+  version "1.6.0-pre.20261124174929"
+  sha256 "5b1bf526c6342774df53b95eb821dfed01f8034f77fd8f9cde3eb364672e48c2"
   license "BSD-2-Clause"
 
   livecheck do
     skip "The tap tracks the commit tagged by the upstream rolling pre-release"
-  end
-
-  bottle do
-    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261120174017-45171268982-1"
-    rebuild 2
-    sha256 arm64_linux:  "eac200665fbeb651005e43089f8c631d002cca0e619a4e647e6ea47b78b497e2"
-    sha256 x86_64_linux: "52d6a3c6edd384f9e3a337ad7810834eb5fbf05d346283519f62e8ba054d5c32"
   end
 
   depends_on "gawk" => :build
