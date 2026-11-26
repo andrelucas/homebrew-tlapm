@@ -4,13 +4,13 @@
       "files": {
         "arm64_linux": {
           "cellar": "/home/linuxbrew/.linuxbrew/Cellar",
-          "sha256": "e4a4e0c86ed2e852ccda34b75587e2b7a8d999d638fa3a75f1dee44057a3a938",
-          "url": "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261124174929-45460109373-1/tlapm-1.6.0-pre.20261124174929.arm64_linux.bottle.1.tar.gz"
+          "sha256": "f216bfc3b79416f12f07a6c68584e6af4c8ed897a1a0d0265dbe1617ea46ef95",
+          "url": "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261126002819-45755598610-1/tlapm-1.6.0-pre.20261126002819.arm64_linux.bottle.1.tar.gz"
         },
         "x86_64_linux": {
           "cellar": "/home/linuxbrew/.linuxbrew/Cellar",
-          "sha256": "37b38db7da0476383a58a00be558b526492c9784177da2a1f3b06ead008ee468",
-          "url": "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261124174929-45460109373-1/tlapm-1.6.0-pre.20261124174929.x86_64_linux.bottle.1.tar.gz"
+          "sha256": "d6dac36fb81a528da8f1b0d5f3bd67711ad3590242002a1919bd8420e2cf0d93",
+          "url": "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261126002819-45755598610-1/tlapm-1.6.0-pre.20261126002819.x86_64_linux.bottle.1.tar.gz"
         }
       },
       "rebuild": 1
@@ -71,6 +71,6 @@
     }
   },
   "versions": {
-    "stable": "1.6.0-pre.20261124174929"
+    "stable": "1.6.0-pre.20261126002819"
   }
 }

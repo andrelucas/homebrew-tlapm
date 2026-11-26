@@ -2,18 +2,18 @@ class Tlapm < Formula
   POLYML_DIR = "lib/tlapm/backends/Isabelle-install/poly".freeze
 
   bottle do
-    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261124174929-45460109373-1"
+    root_url "https://github.com/andrelucas/homebrew-tlapm/releases/download/tlapm-1.6.0-pre.20261126002819-45755598610-1"
     rebuild 1
-    sha256 arm64_linux:  "e4a4e0c86ed2e852ccda34b75587e2b7a8d999d638fa3a75f1dee44057a3a938"
-    sha256 x86_64_linux: "37b38db7da0476383a58a00be558b526492c9784177da2a1f3b06ead008ee468"
+    sha256 arm64_linux:  "f216bfc3b79416f12f07a6c68584e6af4c8ed897a1a0d0265dbe1617ea46ef95"
+    sha256 x86_64_linux: "d6dac36fb81a528da8f1b0d5f3bd67711ad3590242002a1919bd8420e2cf0d93"
   end
   POLYML_EXECUTABLES = %w[poly polyimport].freeze
 
   desc "TLA+ Proof Manager"
   homepage "https://github.com/tlaplus/tlapm"
-  url "https://github.com/tlaplus/tlapm/archive/61263342bc88697b44e6ef6f7b876b3e46f7f787.tar.gz"
-  version "1.6.0-pre.20261124174929"
-  sha256 "5b1bf526c6342774df53b95eb821dfed01f8034f77fd8f9cde3eb364672e48c2"
+  url "https://github.com/tlaplus/tlapm/archive/e4d66f48707fef5f5f64d69a3436b158f68732b7.tar.gz"
+  version "1.6.0-pre.20261126002819"
+  sha256 "ce8aa9638a9afb82c44b608dc76d1d85a3749d9949bc31d0753a66c78d7dbd64"
   license "BSD-2-Clause"
 
   livecheck do
